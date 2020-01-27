@@ -1,8 +1,16 @@
 version: '2'
 
 services:
+  redis:
+    image: redis
+    container_name: redis
+    command: redis-server --requirepass "redis"
+    ports:
+      - "6379:6379"
+
   app:
     build: .
+    container_name: 'ws-product-python'
     ports:
       - '5000:5000'
     volumes:
@@ -11,6 +19,16 @@ services:
       - /usr/src/app/venv
     env_file: .env
     environment:
-      - FLASK_DEBUG=1
-      - FLASK_APP=/usr/src/app/app.py
+      FLASK_DEBUG: 1
+      FLASK_APP: /usr/src/app/app.py
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASS: "redis"
+      REDIS_TTL: 300
+      TIME_WINDOW: 60
+      REQUEST_LIMIT: 10
     command: /usr/local/bin/flask run --host=0.0.0.0 --port=5000
+    depends_on:
+      - redis
+    links:
+      - redis
