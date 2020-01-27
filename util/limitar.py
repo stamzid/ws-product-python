@@ -4,16 +4,26 @@ import os
 import redis
 import time
 
-TIME_WINDOW = os.getenv('TIME_WINDOW')
-REQUEST_LIMIT = os.getenv('REQUEST_LIMIT')
+import logging
 
+TIME_WINDOW = float(os.getenv('TIME_WINDOW'))
+REQUEST_LIMIT = int(os.getenv('REQUEST_LIMIT'))
+
+logger = logging.getLogger("utils")
+
+c_handler = logging.StreamHandler()
+c_handler.setLevel(logging.INFO)
+c_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+c_handler.setFormatter(c_format)
+
+logger.addHandler(c_handler)
 
 def get_redis_connection():
     host = os.getenv('REDIS_HOST')
     port = os.getenv('REDIS_PORT')
     passwd = os.getenv('REDIS_PASS')
     r = redis.Redis(host=host, port=port, password=passwd, db=0)
-    
+
     return r
 
 
@@ -24,32 +34,29 @@ def limit_request(remote_address):
     current = time.time()
     if record is None:
         set_data = {
-            "ts_queue": [current]
+            "ts": current,
+            "count": 1
         }
         conn.set(remote_address, json.dumps(set_data))
 
         return False
 
     data = json.loads(record)
-    ts_queue = data.get('ts_queue', [])
-    queue_len = len(ts_queue)
+    queue_len = data.get('count')
+    if queue_len <= REQUEST_LIMIT:
+        data['count'] = queue_len + 1
+        conn.set(remote_address, json.dumps(data))
 
-    if queue_len < REQUEST_LIMIT:
         return False
 
-    sorted_ts = sorted(ts_queue)
-    earliest = sorted_ts[0]
-    delta = current - earliest
-
-    if delta < TIME_WINDOW:
+    delta = current - data.get('ts')
+    if delta <= TIME_WINDOW:
         return True
 
-    ts_queue.pop()
-    ts_queue.append(current)
     set_data = {
-        "ts_queue": ts_queue
+        "ts": current,
+        "count": 1
     }
-
     conn.set(remote_address, json.dumps(set_data))
 
     return False

@@ -12,3 +12,4 @@ RUN \
 
 COPY . .
 
+CMD ["python", "-u", "app.py"]

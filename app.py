@@ -27,7 +27,7 @@ with app.app_context():
 @app.route('/')
 def index():
     if limit_request(request.remote_addr):
-        return {"message": "Too Many Requests"}, 429
+        return jsonify({"message": "Too Many Requests", "status": 429})
 
     return 'Welcome to EQ Works 😎'
 
@@ -35,7 +35,7 @@ def index():
 @app.route('/events/hourly')
 def events_hourly():
     if limit_request(request.remote_addr):
-        return {"message": "Too Many Requests"}, 429
+        return jsonify({"message": "Too Many Requests", "status": 429})
 
     return queryHelper('''
         SELECT date, hour, events
@@ -48,7 +48,7 @@ def events_hourly():
 @app.route('/events/daily')
 def events_daily():
     if limit_request(request.remote_addr):
-        return {"message": "Too Many Requests"}, 429
+        return jsonify({"message": "Too Many Requests", "status": 429})
 
     return queryHelper('''
         SELECT date, SUM(events) AS events
@@ -62,7 +62,7 @@ def events_daily():
 @app.route('/stats/hourly')
 def stats_hourly():
     if limit_request(request.remote_addr):
-        return {"message": "Too Many Requests"}, 429
+        return jsonify({"message": "Too Many Requests", "status": 429})
 
     return queryHelper('''
         SELECT date, hour, impressions, clicks, revenue
@@ -75,7 +75,7 @@ def stats_hourly():
 @app.route('/stats/daily')
 def stats_daily():
     if limit_request(request.remote_addr):
-        return {"message": "Too Many Requests"}, 429
+        return jsonify({"message": "Too Many Requests", "status": 429})
 
     return queryHelper('''
         SELECT date,
